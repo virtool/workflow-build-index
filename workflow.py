@@ -1,12 +1,9 @@
 import json
 import os
 import shutil
-import typing
 
-import aiofiles
-import virtool_core.history.db
-import virtool_core.otus.utils
-from virtool_workflow import step
+import virtool_core.utils
+from virtool_workflow import cleanup, step
 
 import utils
 
@@ -164,3 +161,24 @@ async def build_json(job_params, db, data_path, run_in_executor):
             "has_json": True
         }
     })
+
+
+@cleanup
+async def delete_index(job_params, db, run_in_executor):
+    """
+    Removes the nascent index document and directory.
+    :param run_in_executor:
+    :param db:
+    :param job_params:
+    :param job: the job object
+    """
+    await db.indexes.delete_one({"_id": job_params["index_id"]})
+
+    try:
+        await run_in_executor(
+            virtool_core.utils.rm,
+            job_params["index_path"],
+            True
+        )
+    except FileNotFoundError:
+        pass
