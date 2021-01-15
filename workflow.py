@@ -1,4 +1,3 @@
-import asyncio
 import json
 import os
 import shutil
@@ -15,7 +14,7 @@ import utils
 @step
 async def mk_index_dir(job_params, run_in_executor):
     """
-    Make dir for the new index at ``<data_path>/references/<index_id>``.
+    Make dir for the new index at ``<temp_path>/<index_id>``.
 
     """
     await run_in_executor(
@@ -25,12 +24,12 @@ async def mk_index_dir(job_params, run_in_executor):
 
 
 @step
-async def write_fasta(job_params, db, data_path):
+async def write_fasta(job_params, data_path, db):
     """
     Generates a FASTA file of all sequences in the reference database. The FASTA headers are
     the accession numbers.
     """
-    patched_otus = await get_patched_otus(
+    patched_otus = await utils.get_patched_otus(
         db,
         data_path,
         job_params["manifest"]
@@ -38,7 +37,7 @@ async def write_fasta(job_params, db, data_path):
 
     sequence_otu_map = dict()
 
-    sequences = get_sequences_from_patched_otus(
+    sequences = utils.get_sequences_from_patched_otus(
         patched_otus,
         job_params["data_type"],
         sequence_otu_map
@@ -46,7 +45,7 @@ async def write_fasta(job_params, db, data_path):
 
     fasta_path = os.path.join(job_params["temp_index_path"], "ref.fa")
 
-    await write_sequences_to_file(fasta_path, sequences)
+    await utils.write_sequences_to_file(fasta_path, sequences)
 
     index_id = job_params["index_id"]
 
@@ -165,62 +164,3 @@ async def build_json(job_params, db, data_path, run_in_executor):
             "has_json": True
         }
     })
-
-
-async def get_patched_otus(db, data_path, manifest: dict) -> typing.List[dict]:
-    coros = list()
-
-    for patch_id, patch_version in manifest.items():
-        coros.append(virtool_core.history.db.patch_to_version(
-            db,
-            data_path,
-            patch_id,
-            patch_version
-        ))
-
-    return [j[1] for j in await asyncio.tasks.gather(*coros)]
-
-
-def get_sequences_from_patched_otus(
-        otus: typing.Iterable[dict],
-        data_type: str, sequence_otu_map: dict
-) -> typing.Generator[dict, None, None]:
-    """
-    Return sequence documents based on an `Iterable` of joined OTU documents. Writes a map of sequence IDs to OTU IDs
-    into the passed `sequence_otu_map`.
-    If `data_type` is `barcode`, all sequences are returned. Otherwise, only sequences of default isolates are returned.
-    :param otus: an Iterable of joined OTU documents
-    :param data_type: the data type of the parent reference for the OTUs
-    :param sequence_otu_map: a dict to populate with sequence-OTU map information
-    :return: a generator that yields sequence documents
-    """
-    for otu in otus:
-        otu_id = otu["_id"]
-
-        for isolate in otu["isolates"]:
-            for sequence in isolate["sequences"]:
-                sequence_id = sequence["_id"]
-                sequence_otu_map[sequence_id] = otu_id
-
-        if data_type == "barcode":
-            for sequence in virtool_core.otus.utils.extract_sequences(otu):
-                yield sequence
-        else:
-            for sequence in virtool_core.otus.utils.extract_default_sequences(otu):
-                yield sequence
-
-
-async def write_sequences_to_file(path: str, sequences: typing.Iterable):
-    """
-    Write a FASTA file based on a given `Iterable` containing sequence documents.
-    Headers will contain the `_id` field of the document and the sequence text is from the `sequence` field.
-    :param path: the path to write the file to
-    :param sequences: the sequences to write to file
-    """
-    async with aiofiles.open(path, "w") as f:
-        for sequence in sequences:
-            sequence_id = sequence["_id"]
-            sequence_data = sequence["sequence"]
-
-            line = f">{sequence_id}\n{sequence_data}\n"
-            await f.write(line)
