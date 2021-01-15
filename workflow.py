@@ -2,17 +2,15 @@ import json
 import os
 import shutil
 
+import utils
 import virtool_core.utils
 from virtool_workflow import cleanup, step
-
-import utils
 
 
 @step
 async def mk_index_dir(job_params, run_in_executor):
     """
     Make dir for the new index at ``<temp_path>/<index_id>``.
-
     """
     await run_in_executor(
         os.makedirs,
@@ -167,10 +165,6 @@ async def build_json(job_params, db, data_path, run_in_executor):
 async def delete_index(job_params, db, run_in_executor):
     """
     Removes the nascent index document and directory.
-    :param run_in_executor:
-    :param db:
-    :param job_params:
-    :param job: the job object
     """
     await db.indexes.delete_one({"_id": job_params["index_id"]})
 
