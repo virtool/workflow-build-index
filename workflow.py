@@ -182,3 +182,25 @@ async def delete_index(job_params, db, run_in_executor):
         )
     except FileNotFoundError:
         pass
+
+
+@cleanup
+async def reset_history(job_params, db):
+    """
+    Sets the index ID and version fields for all history items included in failed build to 'unbuilt'.
+    """
+    query = {
+        "_id": {
+            "$in": await db.history.distinct("_id", {"index.id": job_params["index_id"]})
+        }
+    }
+
+    # Set all the otus included in the build to "unbuilt" again.
+    await db.history.update_many(query, {
+        "$set": {
+            "index": {
+                "id": "unbuilt",
+                "version": "unbuilt"
+            }
+        }
+    })
