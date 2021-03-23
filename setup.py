@@ -12,7 +12,8 @@ PACKAGES = find_packages(exclude="tests")
 
 
 INSTALL_REQUIRES = [
-    "virtool-workflow==0.3.0"
+    "virtool-core==0.1.1",
+    "virtool-workflow==0.4.0"
 ]
 
 setup(

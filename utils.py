@@ -34,28 +34,6 @@ SEQUENCE_KEYS = [
 ]
 
 
-async def get_patched_otus(db, data_path: str, manifest: dict) -> List[dict]:
-    """
-    Get joined OTUs patched to a specific version based on a manifest of OTU ids and versions.
-
-    :param db: the Virtool database client
-    :param data_path: the Virtool data path
-    :param manifest: the manifest
-
-    """
-    coros = list()
-
-    for patch_id, patch_version in manifest.items():
-        coros.append(virtool_core.history.db.patch_to_version(
-            db,
-            data_path,
-            patch_id,
-            patch_version
-        ))
-
-    return [j[1] for j in await asyncio.tasks.gather(*coros)]
-
-
 async def write_sequences_to_file(path: str, sequences: Iterable):
     """
     Write a FASTA file based on a given `Iterable` containing sequence documents.
@@ -107,30 +85,7 @@ def get_sequences_from_patched_otus(
                 yield sequence
 
 
-async def export(db, data_path: str, ref_id: str):
-    otu_list = list()
-
-    query = {
-        "reference.id": ref_id,
-        "last_indexed_version": {
-            "$ne": None
-        }
-    }
-
-    async for document in db.otus.find(query):
-        _, joined, _ = await virtool_core.history.db.patch_to_version(
-            db,
-            data_path,
-            document["_id"],
-            document["last_indexed_version"]
-        )
-
-        otu_list.append(joined)
-
-    return clean_export_list(otu_list)
-
-
-def clean_export_list(otus: List[Dict]):
+def prepare_export_otus(otus: List[Dict]) -> List[Dict]:
     cleaned = list()
 
     otu_keys = OTU_KEYS + ["_id"]
@@ -149,12 +104,12 @@ def clean_export_list(otus: List[Dict]):
                 except KeyError:
                     pass
 
-        cleaned.append(clean_otu(otu, otu_keys, sequence_keys))
+        cleaned.append(prepare_exportable_otu(otu, otu_keys, sequence_keys))
 
     return cleaned
 
 
-def clean_otu(otu, otu_keys: List[str] = None, sequence_keys: List[str] = None):
+def prepare_exportable_otu(otu, otu_keys: List[str] = None, sequence_keys: List[str] = None):
     otu_keys = otu_keys or OTU_KEYS
     sequence_keys = sequence_keys or SEQUENCE_KEYS
 
