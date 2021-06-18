@@ -1,9 +1,14 @@
 import json
 
-from virtool_workflow import cleanup, step
+from virtool_workflow import cleanup, step, fixture
 
 import utils
 from utils import prepare_export_otus
+
+
+@fixture
+def index(indexes):
+    return indexes[0]
 
 
 @step
@@ -93,6 +98,3 @@ async def delete_index(index):
     Removes the nascent index document and directory.
     """
     await index.delete()
-
-
-
