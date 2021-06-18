@@ -13,10 +13,6 @@ poetry run pytest
 
 ### Docker Container With External Dependencies Installed
 
-```
+```shell script
 cd tests && docker-compose up
 ```
-
-
-
-
