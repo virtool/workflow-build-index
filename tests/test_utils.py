@@ -1,18 +1,10 @@
 import os
 import types
 
-import aiohttp.test_utils
 import pytest
-from virtool_workflow_runtime.config.configuration import db_name, db_connection_string
-from virtool_workflow_runtime.db import VirtoolDatabase
 
 import utils
-
-
-@pytest.fixture()
-def db():
-    db = VirtoolDatabase(db_name(), db_connection_string())
-    return db
+import aiohttp.test_utils
 
 
 @pytest.fixture
