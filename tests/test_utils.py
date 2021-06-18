@@ -1,10 +1,10 @@
 import os
 import types
 
+import aiohttp.test_utils
 import pytest
 
 import utils
-import aiohttp.test_utils
 
 
 @pytest.fixture
@@ -67,33 +67,8 @@ def fake_otus():
     ]
 
 
-@pytest.mark.asyncio
-async def test_get_patched_otus(mocker, db):
-    mocker.patch("virtool_core.history.db.patch_to_version", aiohttp.test_utils.make_mocked_coro((None, {"_id": "foo"}, None)))
-
-    manifest = {
-        "foo": 2,
-        "bar": 10,
-        "baz": 4
-    }
-
-    data_path = "foo"
-
-    patched_otus = await utils.get_patched_otus(
-        db,
-        data_path,
-        manifest
-    )
-
-    assert list(patched_otus) == [
-        {"_id": "foo"},
-        {"_id": "foo"},
-        {"_id": "foo"}
-    ]
-
-
 @pytest.mark.parametrize("data_type", ["genome", "barcode"])
-def test_get_sequences_from_patched_otus(data_type, snapshot, fake_otus):
+def test_get_sequences_from_patched_otus(data_type, data_regression, fake_otus):
     sequence_otu_dict = dict()
 
     sequences = utils.get_sequences_from_patched_otus(
@@ -104,12 +79,12 @@ def test_get_sequences_from_patched_otus(data_type, snapshot, fake_otus):
 
     assert isinstance(sequences, types.GeneratorType)
 
-    snapshot.assert_match(list(sequences))
-    snapshot.assert_match(sequence_otu_dict)
+    data_regression.check(list(sequences), basename=f"sequences_{data_type}")
+    data_regression.check(sequence_otu_dict, basename=data_type)
 
 
 @pytest.mark.asyncio
-async def test_write_sequences_to_file(snapshot, tmpdir):
+async def test_write_sequences_to_file(file_regression, tmpdir):
     sequences = [
         {
             "_id": "foo",
@@ -130,4 +105,4 @@ async def test_write_sequences_to_file(snapshot, tmpdir):
     await utils.write_sequences_to_file(path, sequences)
 
     with open(path, "r") as f:
-        snapshot.assert_match(f.read())
+        file_regression.check(f.read())
