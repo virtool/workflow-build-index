@@ -4,6 +4,12 @@ version = "0.1.0"
 description = "The build index workflow for Virtool."
 authors = ["Ian Boyes, Tiensheng Sui, Blake Smith"]
 license = "MIT"
+readme="README.md"
+classifiers=[
+    "Topic :: Software Development :: Libraries",
+    "Programming Language:: Python:: 3.9",
+]
+repository="https://github.com/virtool/workflow-build-index"
 
 [tool.poetry.dependencies]
 python = "^3.8"
