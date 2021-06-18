@@ -1,0 +1,7 @@
+version: "3.1"
+services:
+
+  build-index-tests:
+    build:
+      dockerfile: tests/Dockerfile
+      context: ..
