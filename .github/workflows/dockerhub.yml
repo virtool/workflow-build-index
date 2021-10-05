@@ -1,4 +1,4 @@
-name: Release virtool/create-subtraction on DockerHub
+name: Release virtool/build-index on DockerHub
 
 on:
   workflow_dispatch:
