@@ -1,4 +1,5 @@
 from virtool_workflow import step, fixture, hooks
+from virtool_core.utils import compress_file
 
 BOWTIE_LINE_ENDINGS = (
     ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2",
@@ -34,12 +35,21 @@ async def bowtie_build(index, proc):
 
 
 @step
+async def compress_fasta_file(index, run_in_executor):
+    """
+    Compress the FASTA file for the reference.
+
+    """
+    await run_in_executor(compress_file, index.path/"reference.fa", target=index.path/"reference.fa.gz")
+
+
+@step
 async def upload(index, logger):
     logger.info(list(index.path.glob("*")))
     logger.info(list(index.bowtie_path.glob("*")))
-    await index.upload(index.path/"reference.fa")
+    await index.upload(index.path/"reference.fa.gz")
     for ending in BOWTIE_LINE_ENDINGS:
-        await index.upload(index.bowie_path.with_suffix(ending))
+        await index.upload(index.bowtie_path.with_suffix(ending))
 
 
 @step
