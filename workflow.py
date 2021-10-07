@@ -17,16 +17,7 @@ def index(indexes):
 
 
 @step
-async def write_fasta(index):
-    """
-    Generates a FASTA file of all sequences in the reference database.
-    The FASTA headers are the sequence IDs.
-    """
-    await index.write_isolate_fasta(otu_ids=list(index.manifest.keys()))
-
-
-@step
-async def bowtie_build(index, proc, run_subprocess, work_path):
+async def bowtie_build(index, work_path, proc):
     """
     Run a standard bowtie-build process using the previously generated FASTA reference.
 
@@ -35,7 +26,11 @@ async def bowtie_build(index, proc, run_subprocess, work_path):
 
     """
     if index.reference.data_type != "barcode":
-        await index.build_isolate_index(otu_ids=list(index.manifest.keys()))
+        await index.build_isolate_index(
+            otu_ids=list(index.manifest.keys()),
+            path=f"{work_path}/reference",
+            processes=proc
+        )
 
 
 @step
