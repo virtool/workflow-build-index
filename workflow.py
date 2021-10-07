@@ -17,7 +17,7 @@ def index(indexes):
 
 
 @step
-async def bowtie_build(index, work_path, proc):
+async def bowtie_build(index, proc):
     """
     Run a standard bowtie-build process using the previously generated FASTA reference.
 
@@ -28,14 +28,16 @@ async def bowtie_build(index, work_path, proc):
     if index.reference.data_type != "barcode":
         await index.build_isolate_index(
             otu_ids=list(index.manifest.keys()),
-            path=f"{work_path}/ref",
+            path=index.path/"reference",
             processes=proc
         )
 
 
 @step
-async def upload(index):
-    await index.upload(index.fasta_path)
+async def upload(index, logger):
+    logger.info(list(index.path.glob("*")))
+    logger.info(list(index.bowtie_path.glob("*")))
+    await index.upload(index.path/"reference.fa")
     for ending in BOWTIE_LINE_ENDINGS:
         await index.upload(index.bowie_path.with_suffix(ending))
 
