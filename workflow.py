@@ -1,9 +1,14 @@
-from virtool_workflow import step, fixture
+from virtool_workflow import step, fixture, hooks
 
 BOWTIE_LINE_ENDINGS = (
     ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2",
     ".rev.1.bt2", ".rev.2.bt2",
 )
+
+
+@hooks.on_failure
+async def delete_index(index_provider):
+    await index_provider.delete()
 
 
 @fixture
