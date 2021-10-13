@@ -2,7 +2,7 @@
 name = "workflow-build-index"
 version = "0.1.0"
 description = "The build index workflow for Virtool."
-authors = ["Ian Boyes, Tiensheng Sui, Blake Smith"]
+authors = ["Ian Boyes", "Tiensheng Sui", "Blake Smith"]
 license = "MIT"
 readme="README.md"
 classifiers=[
