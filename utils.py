@@ -1,10 +1,8 @@
 import asyncio
 import gzip
-from typing import List, Iterable, Generator, Dict
+from typing import List, Iterable, Generator, Dict, Mapping
 
 import aiofiles
-import virtool_core.history.db
-import virtool_core.otus.utils
 
 ISOLATE_KEYS = [
     "id",
@@ -32,6 +30,27 @@ SEQUENCE_KEYS = [
     "host",
     "sequence"
 ]
+
+
+def extract_default_sequences(joined: Mapping[str, Mapping]) -> List[Mapping]:
+    """Return a list of sequences from the default isolate of the passed joined otu document.
+    :param joined: the joined otu document.
+    :return: a list of sequences associated with the default isolate.
+    """
+    for isolate in joined["isolates"]:
+        if isolate["default"]:
+            return isolate["sequences"]
+
+
+def extract_sequences(otu: Mapping[str, Mapping]) -> Generator[str, None, None]:
+    """
+    Extract sequences from an OTU document
+    :param otu: The OTU document
+    :return: a generator containing sequences from the isolates of the OTU
+    """
+    for isolate in otu["isolates"]:
+        for sequence in isolate["sequences"]:
+            yield sequence
 
 
 async def write_sequences_to_file(path: str, sequences: Iterable):
@@ -78,10 +97,10 @@ def get_sequences_from_patched_otus(
                 sequence_otu_map[sequence_id] = otu_id
 
         if data_type == "barcode":
-            for sequence in virtool_core.otus.utils.extract_sequences(otu):
+            for sequence in extract_sequences(otu):
                 yield sequence
         else:
-            for sequence in virtool_core.otus.utils.extract_default_sequences(otu):
+            for sequence in extract_default_sequences(otu):
                 yield sequence
 
 
