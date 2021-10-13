@@ -27,6 +27,7 @@ jobs:
           docker-compose up --build --exit-code-from build-index-tests
   release:
     runs-on: ubuntu-20.04
+    needs: test
     if: github.event_name == 'push'
     steps:
       - name: Checkout
