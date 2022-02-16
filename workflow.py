@@ -20,10 +20,10 @@ def index(indexes):
 @step
 async def bowtie_build(index, proc):
     """
-    Run a standard bowtie-build process using the previously generated FASTA reference.
+    Build a Bowtie2 mapping index for the reference.
 
-    Do not run the build if the reference contains barcode targets. Amplicon workflows do not use
-    Bowtie2 indexes. The root name for the new reference is 'reference'.
+    Do not run the build if the reference contains barcode targets. Amplicon workflows
+    do not use Bowtie2 indexes. The root name for the new reference is 'reference'.
 
     """
     if index.reference.data_type != "barcode":
@@ -35,23 +35,16 @@ async def bowtie_build(index, proc):
 
 
 @step
-async def compress_fasta_file(index, run_in_executor):
-    """
-    Compress the FASTA file for the reference.
+async def finalize(index, logger, run_in_executor):
+    """Compress and save the new reference index files."""
+    await run_in_executor(
+        compress_file, index.path / "reference.fa",
+        target=index.path / "reference.fa.gz"
+    )
 
-    """
-    await run_in_executor(compress_file, index.path/"reference.fa", target=index.path/"reference.fa.gz")
-
-
-@step
-async def upload(index, logger):
-    logger.info(list(index.path.glob("*")))
-    logger.info(list(index.bowtie_path.glob("*")))
     await index.upload(index.path/"reference.fa.gz")
+
     for ending in BOWTIE_LINE_ENDINGS:
         await index.upload(index.bowtie_path.with_suffix(ending))
 
-
-@step
-async def finalize(index):
     await index.finalize()
