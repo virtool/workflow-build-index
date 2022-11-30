@@ -1,9 +1,17 @@
-from virtool_workflow import step, fixture, hooks
+import asyncio
+from typing import List
+
 from virtool_core.utils import compress_file
+from virtool_workflow import step, fixture, hooks
+from virtool_workflow.data_model.indexes import WFIndex
 
 BOWTIE_LINE_ENDINGS = (
-    ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2",
-    ".rev.1.bt2", ".rev.2.bt2",
+    ".1.bt2",
+    ".2.bt2",
+    ".3.bt2",
+    ".4.bt2",
+    ".rev.1.bt2",
+    ".rev.2.bt2",
 )
 
 
@@ -13,7 +21,7 @@ async def delete_index(index_provider):
 
 
 @fixture
-def index(indexes):
+def index(indexes: List[WFIndex]):
     return indexes[0]
 
 
@@ -29,22 +37,26 @@ async def bowtie_build(index, proc):
     if index.reference.data_type != "barcode":
         await index.build_isolate_index(
             otu_ids=list(index.manifest.keys()),
-            path=index.path/"reference",
-            processes=proc
+            path=index.path / "reference",
+            processes=proc,
         )
 
 
 @step
-async def finalize(index, logger, run_in_executor):
+async def finalize(index):
     """Compress and save the new reference index files."""
-    await run_in_executor(
-        compress_file, index.path / "reference.fa",
-        target=index.path / "reference.fa.gz"
+    await asyncio.to_thread(
+        compress_file,
+        index.path / "reference.fa",
+        target=index.path / "reference.fa.gz",
     )
 
-    await index.upload(index.path/"reference.fa.gz")
-
-    for ending in BOWTIE_LINE_ENDINGS:
-        await index.upload(index.bowtie_path.with_suffix(ending))
+    await asyncio.gather(
+        index.upload(index.path / "reference.fa.gz"),
+        *[
+            index.upload(index.bowtie_path.with_suffix(ending))
+            for ending in BOWTIE_LINE_ENDINGS
+        ]
+    )
 
     await index.finalize()

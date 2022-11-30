@@ -21,10 +21,8 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-      - name: Run Tests Using Docker Compose
-        run: |
-          cd tests
-          docker-compose up --build --exit-code-from build-index-tests
+      - name: Test
+        run: docker build --target test .
   release:
     runs-on: ubuntu-20.04
     needs: test

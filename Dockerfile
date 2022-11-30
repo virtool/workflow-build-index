@@ -1,6 +1,11 @@
-FROM virtool/workflow:4.0.2
-
+FROM virtool/workflow:5.2.1 as base
 WORKDIR /workflow
+COPY workflow.py utils.py /workflow/
 
-COPY workflow.py /workflow/workflow.py
-COPY utils.py /workflow/utils.py
+FROM base as test
+WORKDIR /test
+RUN curl -sSL https://install.python-poetry.org | python3 -
+COPY ./pyproject.toml ./poetry.lock ./
+RUN poetry install
+COPY . .
+RUN ["poetry", "run", "pytest"]
