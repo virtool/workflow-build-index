@@ -4,14 +4,15 @@ on:
   release:
     types: [published]
 
+env:
+  REGISTRY: ghcr.io
+
 jobs:
   dockerhub:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Login
-        uses: docker/login-action@v1
+      - uses: actions/checkout@v2
+      - uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -20,3 +21,31 @@ jobs:
         with:
           push: true
           tags: virtool/build-index:${{ github.event.release.tag_name }}
+  ghcr:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      packages: write
+    if: github.repository_owner == 'Virtool'
+    steps:
+    - uses: actions/checkout@v2
+    - uses: snok/install-poetry@v1
+    - name: Update Version
+      run: poetry version ${{github.event.release.tag_name}}
+    - uses: docker/login-action@v1
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.GH_USERNAME }}
+        password: ${{ secrets.GH_TOKEN }}
+    - name: Extract Metadata
+      id: meta
+      uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+      with:
+        images: ${{ env.REGISTRY }}/virtool/build-index
+    - name: Build and Push
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
