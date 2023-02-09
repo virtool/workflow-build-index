@@ -1,4 +1,4 @@
-FROM virtool/workflow:5.2.1 as base
+FROM virtool/workflow:5.3.0 as base
 WORKDIR /workflow
 COPY workflow.py utils.py /workflow/
 
