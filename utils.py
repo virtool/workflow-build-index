@@ -4,32 +4,13 @@ from typing import List, Iterable, Generator, Dict, Mapping
 
 import aiofiles
 
-ISOLATE_KEYS = [
-    "id",
-    "source_type",
-    "source_name",
-    "default"
-]
+ISOLATE_KEYS = ["id", "source_type", "source_name", "default"]
 
-OTU_KEYS = [
-    "name",
-    "abbreviation",
-    "schema"
-]
+OTU_KEYS = ["name", "abbreviation", "schema"]
 
-RIGHTS = [
-    "build",
-    "modify",
-    "modify_otu",
-    "remove"
-]
+RIGHTS = ["build", "modify", "modify_otu", "remove"]
 
-SEQUENCE_KEYS = [
-    "accession",
-    "definition",
-    "host",
-    "sequence"
-]
+SEQUENCE_KEYS = ["accession", "definition", "host", "sequence"]
 
 
 def extract_default_sequences(joined: Mapping[str, Mapping]) -> List[Mapping]:
@@ -73,8 +54,7 @@ async def write_sequences_to_file(path: str, sequences: Iterable):
 
 
 def get_sequences_from_patched_otus(
-        otus: Iterable[dict],
-        data_type: str, sequence_otu_map: dict
+    otus: Iterable[dict], data_type: str, sequence_otu_map: dict
 ) -> Generator[dict, None, None]:
     """
     Return sequence documents based on an `Iterable` of joined OTU documents. Writes a map of sequence IDs to OTU IDs
@@ -128,16 +108,15 @@ def prepare_export_otus(otus: List[Dict]) -> List[Dict]:
     return cleaned
 
 
-def prepare_exportable_otu(otu, otu_keys: List[str] = None, sequence_keys: List[str] = None):
+def prepare_exportable_otu(
+    otu, otu_keys: List[str] = None, sequence_keys: List[str] = None
+):
     otu_keys = otu_keys or OTU_KEYS
     sequence_keys = sequence_keys or SEQUENCE_KEYS
 
     cleaned = {key: otu.get(key) for key in otu_keys}
 
-    cleaned.update({
-        "isolates": list(),
-        "schema": otu.get("schema", list())
-    })
+    cleaned.update({"isolates": list(), "schema": otu.get("schema", list())})
 
     for isolate in otu["isolates"]:
         cleaned_isolate = {key: isolate[key] for key in ISOLATE_KEYS}
@@ -163,5 +142,5 @@ def compress_json_with_gzip(json_string: str, target: str):
     """
     Compress the JSON string to a gzipped file at `target`.
     """
-    with gzip.open(target, 'wb') as f:
+    with gzip.open(target, "wb") as f:
         f.write(bytes(json_string, "utf-8"))
