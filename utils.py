@@ -1,19 +1,18 @@
-import asyncio
 import gzip
-from typing import List, Iterable, Generator, Dict, Mapping
+from typing import Iterable, Generator, Mapping
 
 import aiofiles
 
-ISOLATE_KEYS = ["id", "source_type", "source_name", "default"]
+ISOLATE_KEYS = ("id", "source_type", "source_name", "default")
 
-OTU_KEYS = ["name", "abbreviation", "schema"]
+OTU_KEYS = ("name", "abbreviation", "schema")
 
-RIGHTS = ["build", "modify", "modify_otu", "remove"]
+RIGHTS = ("build", "modify", "modify_otu", "remove")
 
-SEQUENCE_KEYS = ["accession", "definition", "host", "sequence"]
+SEQUENCE_KEYS = ("accession", "definition", "host", "sequence")
 
 
-def extract_default_sequences(joined: Mapping[str, Mapping]) -> List[Mapping]:
+def extract_default_sequences(joined: Mapping[str, Mapping]) -> list[Mapping]:
     """Return a list of sequences from the default isolate of the passed joined otu document.
     :param joined: the joined otu document.
     :return: a list of sequences associated with the default isolate.
@@ -84,7 +83,7 @@ def get_sequences_from_patched_otus(
                 yield sequence
 
 
-def prepare_export_otus(otus: List[Dict]) -> List[Dict]:
+def prepare_export_otus(otus: list[dict]) -> list[dict]:
     cleaned = list()
 
     otu_keys = OTU_KEYS + ["_id"]
@@ -109,7 +108,7 @@ def prepare_export_otus(otus: List[Dict]) -> List[Dict]:
 
 
 def prepare_exportable_otu(
-    otu, otu_keys: List[str] = None, sequence_keys: List[str] = None
+    otu, otu_keys: list[str] = None, sequence_keys: list[str] = None
 ):
     otu_keys = otu_keys or OTU_KEYS
     sequence_keys = sequence_keys or SEQUENCE_KEYS

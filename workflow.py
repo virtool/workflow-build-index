@@ -1,8 +1,8 @@
 import asyncio
-from typing import List
 
 from virtool_core.utils import compress_file
 from virtool_workflow import step, fixture, hooks
+from virtool_workflow.api.indexes import IndexProvider
 from virtool_workflow.data_model.indexes import WFIndex
 
 BOWTIE_LINE_ENDINGS = (
@@ -16,17 +16,17 @@ BOWTIE_LINE_ENDINGS = (
 
 
 @hooks.on_failure
-async def delete_index(index_provider):
+async def delete_index(index_provider: IndexProvider):
     await index_provider.delete()
 
 
 @fixture
-def index(indexes: List[WFIndex]):
+def index(indexes: list[WFIndex]) -> WFIndex:
     return indexes[0]
 
 
 @step
-async def bowtie_build(index, proc):
+async def bowtie_build(index: WFIndex, proc: int):
     """
     Build a Bowtie2 mapping index for the reference.
 
@@ -43,7 +43,7 @@ async def bowtie_build(index, proc):
 
 
 @step
-async def finalize(index):
+async def finalize(index: WFIndex):
     """Compress and save the new reference index files."""
     await asyncio.to_thread(
         compress_file,
