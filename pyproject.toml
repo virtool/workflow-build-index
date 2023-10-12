@@ -1,27 +1,25 @@
 [tool.poetry]
 name = "workflow-build-index"
 version = "0.0.0"
-description = "The build index workflow for Virtool."
+description = "A workflow for building Virtool reference indexes"
 authors = ["Ian Boyes", "Blake Smith", "Tiensheng Sui"]
 license = "MIT"
-readme="README.md"
 classifiers=[
     "Programming Language:: Python:: 3.10",
 ]
-repository="https://github.com/virtool/workflow-build-index"
 
 [tool.poetry.dependencies]
 python = "~3.10"
-virtool-workflow = "^5.1.0"
-black = "^23.1.0"
-pre-commit = "^3.0.4"
+virtool-workflow = "^5.4.2"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^6.2.4"
-pytest-asyncio = "^0.15.1"
+black = "^23.9.1"
+pre-commit = "^3.4.0"
+pytest = "^7.4.2"
 pytest-aiohttp = "^0.3.0"
-pytest-regressions = "^2.2.0"
+pytest-asyncio = "^0.15.1"
 pytest-mock = "^3.6.1"
+pytest-regressions = "^2.2.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
