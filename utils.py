@@ -1,19 +1,26 @@
 import gzip
-from typing import Iterable, Generator, Mapping
+import json
+from pathlib import Path
+from typing import Generator
 
-import aiofiles
-
-ISOLATE_KEYS = ("id", "source_type", "source_name", "default")
-
-OTU_KEYS = ("name", "abbreviation", "schema")
-
-RIGHTS = ("build", "modify", "modify_otu", "remove")
-
-SEQUENCE_KEYS = ("accession", "definition", "host", "sequence")
+from virtool_core.models.reference import ReferenceNested
 
 
-def extract_default_sequences(joined: Mapping[str, Mapping]) -> list[Mapping]:
-    """Return a list of sequences from the default isolate of the passed joined otu document.
+def compress_json_with_gzip(json_string: str, path: Path):
+    """
+    Compress the JSON string to a gzipped file at `path`.
+
+    :param json_string: the JSON string to compress
+    :param path: the path to the target file
+    """
+    with gzip.open(path, "wt") as f:
+        f.write(json_string)
+
+
+def extract_default_sequences(joined: dict[str, dict]) -> list[dict]:
+    """
+    Return a list of sequences from the default isolate of the passed joined otu document.
+
     :param joined: the joined otu document.
     :return: a list of sequences associated with the default isolate.
     """
@@ -22,9 +29,10 @@ def extract_default_sequences(joined: Mapping[str, Mapping]) -> list[Mapping]:
             return isolate["sequences"]
 
 
-def extract_sequences(otu: Mapping[str, Mapping]) -> Generator[str, None, None]:
+def extract_sequences(otu: dict[str, dict]) -> Generator[str, None, None]:
     """
     Extract sequences from an OTU document
+
     :param otu: The OTU document
     :return: a generator containing sequences from the isolates of the OTU
     """
@@ -33,35 +41,17 @@ def extract_sequences(otu: Mapping[str, Mapping]) -> Generator[str, None, None]:
             yield sequence
 
 
-async def write_sequences_to_file(path: str, sequences: Iterable):
-    """
-    Write a FASTA file based on a given `Iterable` containing sequence documents.
-
-    Headers will contain the `_id` field of the document and the sequence text is from the `sequence` field.
-
-    :param path: the path to write the file to
-    :param sequences: the sequences to write to file
-
-    """
-    async with aiofiles.open(path, "w") as f:
-        for sequence in sequences:
-            sequence_id = sequence["_id"]
-            sequence_data = sequence["sequence"]
-
-            line = f">{sequence_id}\n{sequence_data}\n"
-            await f.write(line)
-
-
 def get_sequences_from_patched_otus(
-    otus: Iterable[dict], data_type: str, sequence_otu_map: dict
+    otus: list[dict], data_type: str, sequence_otu_map: dict
 ) -> Generator[dict, None, None]:
     """
-    Return sequence documents based on an `Iterable` of joined OTU documents. Writes a map of sequence IDs to OTU IDs
-    into the passed `sequence_otu_map`.
+    Return sequence documents based on an `Iterable` of joined OTU documents. Writes a
+    map of sequence IDs to OTU IDs into the passed `sequence_otu_map`.
 
-    If `data_type` is `barcode`, all sequences are returned. Otherwise, only sequences of default isolates are returned.
+    If `data_type` is `barcode`, all sequences are returned. Otherwise, only sequences
+    of default isolates are returned.
 
-    :param otus: an Iterable of joined OTU documents
+    :param otus: joined OTU documents
     :param data_type: the data type of the parent reference for the OTUs
     :param sequence_otu_map: a dict to populate with sequence-OTU map information
     :return: a generator that yields sequence documents
@@ -83,63 +73,98 @@ def get_sequences_from_patched_otus(
                 yield sequence
 
 
-def prepare_export_otus(otus: list[dict]) -> list[dict]:
-    cleaned = list()
+def prepare_exportable_otu(otu: dict) -> dict:
+    """
+    Prepare an OTU for export by:
 
-    otu_keys = OTU_KEYS + ["_id"]
-    sequence_keys = SEQUENCE_KEYS + ["_id"]
+    1. Replacing the OTU and sequence IDs with their remote IDs if they exist.
+    2. Removing fields that shouldn't be exported.
 
-    for otu in otus:
-        try:
-            otu["_id"] = otu["remote"]["id"]
-        except KeyError:
-            pass
+    :param otu: the OTU to prepare
+    :return: the prepared exportable OTU
 
-        for isolate in otu["isolates"]:
-            for sequence in isolate["sequences"]:
-                try:
-                    sequence["_id"] = sequence["remote"]["id"]
-                except KeyError:
-                    pass
+    """
 
-        cleaned.append(prepare_exportable_otu(otu, otu_keys, sequence_keys))
+    try:
+        otu_id = otu["remote"]["id"]
+    except KeyError:
+        otu_id = otu["_id"]
 
-    return cleaned
-
-
-def prepare_exportable_otu(
-    otu, otu_keys: list[str] = None, sequence_keys: list[str] = None
-):
-    otu_keys = otu_keys or OTU_KEYS
-    sequence_keys = sequence_keys or SEQUENCE_KEYS
-
-    cleaned = {key: otu.get(key) for key in otu_keys}
-
-    cleaned.update({"isolates": list(), "schema": otu.get("schema", list())})
+    cleaned_otu = {
+        "_id": otu_id,
+        **{
+            key: otu[key]
+            for key in (
+                "name",
+                "abbreviation",
+                "schema",
+            )
+        },
+        "isolates": [],
+    }
 
     for isolate in otu["isolates"]:
-        cleaned_isolate = {key: isolate[key] for key in ISOLATE_KEYS}
-        cleaned_isolate["sequences"] = list()
+        cleaned_isolate = {
+            **{
+                key: isolate[key]
+                for key in (
+                    "id",
+                    "source_type",
+                    "source_name",
+                    "default",
+                )
+            },
+            "sequences": [],
+        }
 
         for sequence in isolate["sequences"]:
-            cleaned_sequence = {key: sequence[key] for key in sequence_keys}
+            try:
+                sequence_id = sequence["remote"]["id"]
+            except KeyError:
+                sequence_id = sequence["_id"]
 
-            for key in ["segment", "target"]:
-                try:
-                    cleaned_sequence[key] = sequence[key]
-                except KeyError:
-                    pass
+            cleaned_sequence = {
+                "_id": sequence_id,
+                **{
+                    key: sequence[key]
+                    for key in (
+                        "accession",
+                        "definition",
+                        "host",
+                        "sequence",
+                    )
+                },
+                **{key: sequence.get(key) for key in ("segment", "target")},
+            }
 
             cleaned_isolate["sequences"].append(cleaned_sequence)
 
-        cleaned["isolates"].append(cleaned_isolate)
+        cleaned_otu["isolates"].append(cleaned_isolate)
 
-    return cleaned
+    return cleaned_otu
 
 
-def compress_json_with_gzip(json_string: str, target: str):
-    """
-    Compress the JSON string to a gzipped file at `target`.
-    """
-    with gzip.open(target, "wb") as f:
-        f.write(bytes(json_string, "utf-8"))
+def write_export_json_and_fasta(
+    reference: ReferenceNested, otus_json_path: Path, json_path: Path, fasta_path: Path
+):
+    with open(otus_json_path) as f:
+        otus = json.load(f)
+
+    with open(json_path, "w") as f_json, open(fasta_path, "w") as f_fasta:
+        exportable_otus = []
+
+        for otu in otus:
+            for sequence in extract_default_sequences(otu):
+                f_fasta.write(f">{sequence['_id']}\n{sequence['sequence']}\n")
+
+            exportable_otus.append(prepare_exportable_otu(otu))
+
+        json.dump(
+            {
+                "data_type": reference.data_type,
+                "organism": "",
+                "otus": exportable_otus,
+                "targets": None,
+            },
+            f_json,
+        )

@@ -14,9 +14,9 @@ FROM python:3.10-buster as base
 WORKDIR /workflow
 COPY --from=prep /build/bowtie2/* /usr/local/bin/
 COPY --from=prep /build/pigz-2.8/pigz /usr/local/bin/pigz
-COPY pyproject.toml poetry.lock utils.py workflow.py ./
 RUN curl -sSL https://install.python-poetry.org | python -
 ENV PATH="/root/.local/bin:${PATH}"
+COPY pyproject.toml poetry.lock utils.py workflow.py ./
 RUN poetry export > requirements.txt
 RUN pip install -r requirements.txt
 
