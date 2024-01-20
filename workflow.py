@@ -1,62 +1,105 @@
 import asyncio
+import os
+from pathlib import Path
 
+from pyfixtures import fixture
 from virtool_core.utils import compress_file
-from virtool_workflow import step, fixture, hooks
-from virtool_workflow.api.indexes import IndexProvider
-from virtool_workflow.data_model.indexes import WFIndex
+from virtool_workflow import RunSubprocess, hooks, step
+from virtool_workflow.data.indexes import WFNewIndex
 
-BOWTIE_LINE_ENDINGS = (
-    ".1.bt2",
-    ".2.bt2",
-    ".3.bt2",
-    ".4.bt2",
-    ".rev.1.bt2",
-    ".rev.2.bt2",
-)
+from utils import write_export_json_and_fasta
 
 
 @hooks.on_failure
-async def delete_index(index_provider: IndexProvider):
-    await index_provider.delete()
+async def delete_index(new_index: WFNewIndex):
+    await new_index.delete()
 
 
 @fixture
-def index(indexes: list[WFIndex]) -> WFIndex:
-    return indexes[0]
+async def bowtie_path(work_path: Path) -> Path:
+    """The path to the generated Bowtie2 index files."""
+    path = work_path / "bowtie"
+    await asyncio.to_thread(path.mkdir)
+
+    return path / "reference"
+
+
+@fixture
+async def export_json_path(work_path: Path) -> Path:
+    """The path to the generated JSON index export file."""
+    return work_path / "reference.json.gz"
+
+
+@fixture
+async def fasta_path(work_path: Path) -> Path:
+    """The path to the generated index file."""
+    return work_path / "reference.fa"
+
+
+@step(name="Process OTUs")
+async def process_otus(
+    export_json_path: Path,
+    fasta_path: Path,
+    logger,
+    new_index: WFNewIndex,
+    proc: int,
+    work_path: Path,
+):
+    """Create a FASTA file and exportable JSON from the index OTUs."""
+    json_path = work_path / "reference.json"
+
+    await asyncio.to_thread(
+        write_export_json_and_fasta,
+        new_index.reference,
+        new_index.otus_json_path,
+        json_path,
+        fasta_path,
+    )
+
+    logger.info("wrote json file", stats=os.stat(json_path))
+
+    await asyncio.to_thread(compress_file, json_path, export_json_path, processes=proc)
 
 
 @step
-async def bowtie_build(index: WFIndex, proc: int):
-    """
-    Build a Bowtie2 mapping index for the reference.
+async def bowtie_build(
+    bowtie_path: Path,
+    fasta_path: Path,
+    proc: int,
+    run_subprocess: RunSubprocess,
+):
+    """Build a Bowtie2 mapping index for the reference.
 
     Do not run the build if the reference contains barcode targets. Amplicon workflows
     do not use Bowtie2 indexes. The root name for the new reference is 'reference'.
 
     """
-    if index.reference.data_type != "barcode":
-        await index.build_isolate_index(
-            otu_ids=list(index.manifest.keys()),
-            path=index.path / "reference",
-            processes=proc,
-        )
+    await run_subprocess(["bowtie2-build", "--threads", proc, fasta_path, bowtie_path])
 
 
 @step
-async def finalize(index: WFIndex):
+async def finalize(
+    bowtie_path: Path,
+    export_json_path: Path,
+    fasta_path: Path,
+    new_index: WFNewIndex,
+    proc: int,
+    work_path: Path,
+):
     """Compress and save the new reference index files."""
+    compressed_fasta_path = work_path / "reference.fa.gz"
+
     await asyncio.to_thread(
         compress_file,
-        index.path / "reference.fa",
-        target=index.path / "reference.fa.gz",
+        fasta_path,
+        compressed_fasta_path,
+        processes=proc,
     )
 
-    await asyncio.gather(
-        index.upload(index.path / "reference.fa.gz"),
-        *[
-            index.upload(index.bowtie_path.with_suffix(ending))
-            for ending in BOWTIE_LINE_ENDINGS
-        ]
-    )
+    await new_index.upload(export_json_path)
+    await new_index.upload(compressed_fasta_path)
 
-    await index.finalize()
+    for filename in bowtie_path.parent.iterdir():
+        await new_index.upload(bowtie_path.parent / filename)
+
+    await new_index.finalize()

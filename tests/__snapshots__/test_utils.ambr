@@ -1,0 +1,71 @@
+# serializer version: 1
+# name: test_get_sequences_from_patched_otus[barcode][sequence_otu_dict]
+  dict({
+    '1': 'foo',
+    '2': 'foo',
+    '3': 'foo',
+    '4': 'foo',
+    '5': 'bar',
+    '6': 'bar',
+  })
+# ---
+# name: test_get_sequences_from_patched_otus[barcode][sequences]
+  list([
+    dict({
+      '_id': '1',
+      'sequence': 'AGAGGATAGAGACACA',
+    }),
+    dict({
+      '_id': '2',
+      'sequence': 'GGGTAGTCGATCTGGC',
+    }),
+    dict({
+      '_id': '3',
+      'default': True,
+      'sequence': 'TTTAGAGTTGGATTAC',
+    }),
+    dict({
+      '_id': '4',
+      'default': True,
+      'sequence': 'AAAGGAGAGAGAAACC',
+    }),
+    dict({
+      '_id': '5',
+      'sequence': 'TTTGAGCCACACCCCC',
+    }),
+    dict({
+      '_id': '6',
+      'sequence': 'GCCCACCCATTAGAAC',
+    }),
+  ])
+# ---
+# name: test_get_sequences_from_patched_otus[genome][sequence_otu_dict]
+  dict({
+    '1': 'foo',
+    '2': 'foo',
+    '3': 'foo',
+    '4': 'foo',
+    '5': 'bar',
+    '6': 'bar',
+  })
+# ---
+# name: test_get_sequences_from_patched_otus[genome][sequences]
+  list([
+    dict({
+      '_id': '1',
+      'sequence': 'AGAGGATAGAGACACA',
+    }),
+    dict({
+      '_id': '2',
+      'sequence': 'GGGTAGTCGATCTGGC',
+    }),
+    dict({
+      '_id': '5',
+      'sequence': 'TTTGAGCCACACCCCC',
+    }),
+    dict({
+      '_id': '6',
+      'sequence': 'GCCCACCCATTAGAAC',
+    }),
+  ])
+# ---
