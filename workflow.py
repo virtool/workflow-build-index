@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pyfixtures import fixture
 from virtool_core.utils import compress_file
-from virtool_workflow import hooks, step, RunSubprocess
+from virtool_workflow import RunSubprocess, hooks, step
 from virtool_workflow.data.indexes import WFNewIndex
 
 from utils import write_export_json_and_fasta
@@ -68,8 +68,7 @@ async def bowtie_build(
     proc: int,
     run_subprocess: RunSubprocess,
 ):
-    """
-    Build a Bowtie2 mapping index for the reference.
+    """Build a Bowtie2 mapping index for the reference.
 
     Do not run the build if the reference contains barcode targets. Amplicon workflows
     do not use Bowtie2 indexes. The root name for the new reference is 'reference'.

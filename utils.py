@@ -7,8 +7,7 @@ from virtool_core.models.reference import ReferenceNested
 
 
 def compress_json_with_gzip(json_string: str, path: Path):
-    """
-    Compress the JSON string to a gzipped file at `path`.
+    """Compress the JSON string to a gzipped file at `path`.
 
     :param json_string: the JSON string to compress
     :param path: the path to the target file
@@ -18,8 +17,7 @@ def compress_json_with_gzip(json_string: str, path: Path):
 
 
 def extract_default_sequences(joined: dict[str, dict]) -> list[dict]:
-    """
-    Return a list of sequences from the default isolate of the passed joined otu document.
+    """Return a list of sequences from the default isolate of the passed joined otu.
 
     :param joined: the joined otu document.
     :return: a list of sequences associated with the default isolate.
@@ -30,8 +28,7 @@ def extract_default_sequences(joined: dict[str, dict]) -> list[dict]:
 
 
 def extract_sequences(otu: dict[str, dict]) -> Generator[str, None, None]:
-    """
-    Extract sequences from an OTU document
+    """Extract sequences from an OTU document
 
     :param otu: The OTU document
     :return: a generator containing sequences from the isolates of the OTU
@@ -42,11 +39,12 @@ def extract_sequences(otu: dict[str, dict]) -> Generator[str, None, None]:
 
 
 def get_sequences_from_patched_otus(
-    otus: list[dict], data_type: str, sequence_otu_map: dict
+    otus: list[dict],
+    data_type: str,
+    sequence_otu_map: dict,
 ) -> Generator[dict, None, None]:
-    """
-    Return sequence documents based on an `Iterable` of joined OTU documents. Writes a
-    map of sequence IDs to OTU IDs into the passed `sequence_otu_map`.
+    """Return sequence documents based on an `Iterable` of joined OTU documents. Writes
+    a map of sequence IDs to OTU IDs into the passed `sequence_otu_map`.
 
     If `data_type` is `barcode`, all sequences are returned. Otherwise, only sequences
     of default isolates are returned.
@@ -74,8 +72,7 @@ def get_sequences_from_patched_otus(
 
 
 def prepare_exportable_otu(otu: dict) -> dict:
-    """
-    Prepare an OTU for export by:
+    """Prepare an OTU for export by:
 
     1. Replacing the OTU and sequence IDs with their remote IDs if they exist.
     2. Removing fields that shouldn't be exported.
@@ -84,7 +81,6 @@ def prepare_exportable_otu(otu: dict) -> dict:
     :return: the prepared exportable OTU
 
     """
-
     try:
         otu_id = otu["remote"]["id"]
     except KeyError:
@@ -145,7 +141,10 @@ def prepare_exportable_otu(otu: dict) -> dict:
 
 
 def write_export_json_and_fasta(
-    reference: ReferenceNested, otus_json_path: Path, json_path: Path, fasta_path: Path
+    reference: ReferenceNested,
+    otus_json_path: Path,
+    json_path: Path,
+    fasta_path: Path,
 ):
     with open(otus_json_path) as f:
         otus = json.load(f)
