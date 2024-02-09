@@ -16,7 +16,7 @@ COPY --from=prep /build/bowtie2/* /usr/local/bin/
 COPY --from=prep /build/pigz-2.8/pigz /usr/local/bin/pigz
 RUN curl -sSL https://install.python-poetry.org | python -
 ENV PATH="/root/.local/bin:${PATH}"
-COPY pyproject.toml poetry.lock utils.py workflow.py ./
+COPY pyproject.toml poetry.lock utils.py workflow.py VERSION* ./
 RUN poetry export > requirements.txt
 RUN pip install -r requirements.txt
 
