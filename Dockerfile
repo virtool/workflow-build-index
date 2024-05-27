@@ -1,26 +1,48 @@
-FROM debian:buster as prep
+FROM debian:bookworm as pigz
 WORKDIR /build
-RUN apt-get update && apt-get install -y make gcc zlib1g-dev wget unzip
+RUN apt-get update && apt-get install -y gcc make wget zlib1g-dev
 RUN wget https://zlib.net/pigz/pigz-2.8.tar.gz && \
     tar -xzvf pigz-2.8.tar.gz && \
     cd pigz-2.8 && \
     make
+
+FROM debian:bookworm as bowtie2
+WORKDIR /build
+RUN apt-get update && apt-get install -y unzip wget
 RUN wget https://github.com/BenLangmead/bowtie2/releases/download/v2.3.2/bowtie2-2.3.2-legacy-linux-x86_64.zip && \
     unzip bowtie2-2.3.2-legacy-linux-x86_64.zip && \
     mkdir bowtie2 && \
     cp bowtie2-2.3.2-legacy/bowtie2* bowtie2
 
-FROM python:3.10-buster as base
+FROM python:3.12-bookworm as build
 WORKDIR /workflow
-COPY --from=prep /build/bowtie2/* /usr/local/bin/
-COPY --from=prep /build/pigz-2.8/pigz /usr/local/bin/pigz
 RUN curl -sSL https://install.python-poetry.org | python -
-ENV PATH="/root/.local/bin:${PATH}"
-COPY pyproject.toml poetry.lock utils.py workflow.py VERSION* ./
-RUN poetry export > requirements.txt
-RUN pip install -r requirements.txt
+ENV PATH="/root/.local/bin:${PATH}" \
+    POETRY_CACHE_DIR='/tmp/poetry_cache' \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_IN_PROJECT=1 \
+    POETRY_VIRTUALENVS_CREATE=1
+COPY pyproject.toml poetry.lock ./
+RUN poetry install --without dev --no-root
 
-FROM base as test
-RUN poetry export  --with dev > requirements.txt
-RUN pip install -r requirements.txt
+FROM python:3.12-bookworm as base
+WORKDIR /workflow
+ENV VIRTUAL_ENV=/app/.venv \
+    PATH="/workflow/.venv/bin:/opt/fastqc:${PATH}"
+COPY --from=bowtie2 /build/bowtie2/* /usr/local/bin/
+COPY --from=pigz /build/pigz-2.8/pigz /usr/local/bin/pigz
+COPY --from=build /workflow/.venv /workflow/.venv
+COPY utils.py workflow.py VERSION* ./
+
+FROM build as test
+COPY --from=bowtie2 /build/bowtie2/* /usr/local/bin/
+COPY --from=pigz /build/pigz-2.8/pigz /usr/local/bin/pigz
+RUN curl -sSL https://install.python-poetry.org | python -
+ENV PATH="/root/.local/bin:${PATH}" \
+    POETRY_CACHE_DIR='/tmp/poetry_cache' \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_IN_PROJECT=1 \
+    POETRY_VIRTUALENVS_CREATE=1
+RUN poetry install
 COPY tests ./tests
+COPY utils.py workflow.py ./
