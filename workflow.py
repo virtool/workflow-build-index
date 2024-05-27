@@ -2,7 +2,6 @@ import asyncio
 import os
 from pathlib import Path
 
-from pyfixtures import fixture
 from virtool_core.utils import compress_file
 from virtool_workflow import RunSubprocess, hooks, step
 from virtool_workflow.data.indexes import WFNewIndex
@@ -13,27 +12,6 @@ from utils import write_export_json_and_fasta
 @hooks.on_failure
 async def delete_index(new_index: WFNewIndex):
     await new_index.delete()
-
-
-@fixture
-async def bowtie_path(work_path: Path) -> Path:
-    """The path to the generated Bowtie2 index files."""
-    path = work_path / "bowtie"
-    await asyncio.to_thread(path.mkdir)
-
-    return path / "reference"
-
-
-@fixture
-async def export_json_path(work_path: Path) -> Path:
-    """The path to the generated JSON index export file."""
-    return work_path / "reference.json.gz"
-
-
-@fixture
-async def fasta_path(work_path: Path) -> Path:
-    """The path to the generated index file."""
-    return work_path / "reference.fa"
 
 
 @step(name="Process OTUs")
