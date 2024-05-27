@@ -32,7 +32,7 @@ ENV VIRTUAL_ENV=/app/.venv \
 COPY --from=bowtie2 /build/bowtie2/* /usr/local/bin/
 COPY --from=pigz /build/pigz-2.8/pigz /usr/local/bin/pigz
 COPY --from=build /workflow/.venv /workflow/.venv
-COPY utils.py workflow.py VERSION* ./
+COPY fixtures.py utils.py workflow.py VERSION* ./
 
 FROM build as test
 COPY --from=bowtie2 /build/bowtie2/* /usr/local/bin/
@@ -45,4 +45,4 @@ ENV PATH="/root/.local/bin:${PATH}" \
     POETRY_VIRTUALENVS_CREATE=1
 RUN poetry install
 COPY tests ./tests
-COPY utils.py workflow.py ./
+COPY fixtures.py utils.py workflow.py ./
