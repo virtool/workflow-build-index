@@ -14,7 +14,7 @@ RUN wget https://github.com/BenLangmead/bowtie2/releases/download/v2.3.2/bowtie2
     mkdir bowtie2 && \
     cp bowtie2-2.3.2-legacy/bowtie2* bowtie2
 
-FROM python:3.12-bookworm as build
+FROM python:3.12.3-bookworm as build
 WORKDIR /workflow
 RUN curl -sSL https://install.python-poetry.org | python -
 ENV PATH="/root/.local/bin:${PATH}" \
@@ -25,7 +25,7 @@ ENV PATH="/root/.local/bin:${PATH}" \
 COPY pyproject.toml poetry.lock ./
 RUN poetry install --without dev --no-root
 
-FROM python:3.12-bookworm as base
+FROM python:3.12.3-bookworm as base
 WORKDIR /workflow
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/workflow/.venv/bin:/opt/fastqc:${PATH}"
