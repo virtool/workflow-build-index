@@ -44,6 +44,8 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [commitlint, test]
     if: github.event_name == 'push'
+    outputs:
+      git-tag: ${{ steps.semantic.outputs.git-tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,7 +55,8 @@ jobs:
           node-version: 20
       - name: Install semantic-release
         run: npm i semantic-release@v24.2.5 @semantic-release/exec@v7.1.0 conventional-changelog-conventionalcommits@9.0.0
-      - name: Release
+      - name: Run semantic-release
+        id: semantic
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
@@ -62,19 +65,19 @@ jobs:
     if: |
       github.repository_owner == 'Virtool' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
-      needs.release.outputs.git-tag != ''
+      needs.release.outputs.git-tag
     needs: [release]
-    outputs:
-      git-tag: ${{ steps.semantic.outputs.git-tag }}
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        ref: ${{ needs.release.outputs.git-tag }}
     - name: Install Poetry
       uses: snok/install-poetry@v1
     - name: Write VERSION file
-      run: echo ${{ github.event.release.tag_name }} > VERSION
+      run: echo ${{ needs.release.outputs.git-tag }} > VERSION
     - name: Update Version
-      run: poetry version ${{github.event.release.tag_name}}
+      run: poetry version ${{ needs.release.outputs.git-tag }}
     - name: Login
       uses: docker/login-action@v3
       with:
