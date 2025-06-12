@@ -7,18 +7,23 @@ on:
   push:
     branches:
       - "main"
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
 
 jobs:
   commitlint:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: wagoid/commitlint-github-action@v4
+      - name: Lint
+        uses: wagoid/commitlint-github-action@v4
   test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,9 +41,11 @@ jobs:
       - name: Test
         run: docker run --rm -t ${{ steps.build.outputs.imageid }} poetry run pytest
   release:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: [commitlint, test]
     if: github.event_name == 'push'
+    outputs:
+      git-tag: ${{ steps.semantic.outputs.git-tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,9 +54,46 @@ jobs:
         with:
           node-version: 20
       - name: Install semantic-release
-        run: npm i semantic-release@v23.0.0 conventional-changelog-conventionalcommits@7.0.2
-      - name: Release
+        run: npm i semantic-release@v24.2.5 @semantic-release/exec@v7.1.0 conventional-changelog-conventionalcommits@9.0.0
+      - name: Run semantic-release
+        id: semantic
         env:
-          GITHUB_USERNAME: ${{ secrets.GH_USERNAME }}
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
+  ghcr:
+    runs-on: ubuntu-24.04
+    if: |
+      github.repository_owner == 'Virtool' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      needs.release.outputs.git-tag
+    needs: [release]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ needs.release.outputs.git-tag }}
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+    - name: Write VERSION file
+      run: echo ${{ needs.release.outputs.git-tag }} > VERSION
+    - name: Update Version
+      run: poetry version ${{ needs.release.outputs.git-tag }}
+    - name: Login
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Extract Metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/virtool/build-index
+    - name: Build and Push
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        labels: ${{ steps.meta.outputs.labels }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        target: base
