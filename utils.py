@@ -1,9 +1,9 @@
 import gzip
 import json
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
 
-from virtool_core.models.reference import ReferenceNested
+from virtool.references.models import ReferenceNested
 
 
 def compress_json_with_gzip(json_string: str, path: Path):
