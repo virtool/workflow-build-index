@@ -2,7 +2,7 @@ import asyncio
 import os
 from pathlib import Path
 
-from virtool_core.utils import compress_file
+from virtool.utils import compress_file
 from virtool_workflow import RunSubprocess, hooks, step
 from virtool_workflow.data.indexes import WFNewIndex
 
