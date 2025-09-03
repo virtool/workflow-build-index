@@ -1,5 +1,6 @@
 FROM python:3.13-bookworm AS uv
 WORKDIR /app
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:${PATH}" \
     UV_CACHE_DIR='/tmp/uv_cache'
@@ -18,8 +19,9 @@ COPY fixtures.py utils.py workflow.py VERSION* ./
 
 FROM deps AS test
 WORKDIR /app
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.local/bin:PATH}" \
+ENV PATH="/root/.local/bin:${PATH}" \
     UV_CACHE_DIR='/tmp/uv_cache'
 COPY uv.lock pyproject.toml README.md ./
 COPY tests ./tests
