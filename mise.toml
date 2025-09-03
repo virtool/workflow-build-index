@@ -1,0 +1,14 @@
+[tools]
+uv = "latest"
+
+[tasks.test]
+description = "Run tests using uv"
+run = "uv run pytest"
+
+[tasks.lint]
+description = "Run ruff linter"
+run = "uv run ruff check"
+
+[tasks.format]
+description = "Format code with ruff"
+run = "uv run ruff format"
