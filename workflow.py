@@ -3,8 +3,8 @@ import os
 from pathlib import Path
 
 from virtool.utils import compress_file
-from virtool_workflow import RunSubprocess, hooks, step
-from virtool_workflow.data.indexes import WFNewIndex
+from virtool.workflow import RunSubprocess, hooks, step
+from virtool.workflow.data.indexes import WFNewIndex
 
 from utils import write_export_json_and_fasta
 
