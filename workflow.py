@@ -52,7 +52,9 @@ async def bowtie_build(
     do not use Bowtie2 indexes. The root name for the new reference is 'reference'.
 
     """
-    await run_subprocess(["bowtie2-build", "--threads", proc, fasta_path, bowtie_path])
+    await run_subprocess(
+        ["bowtie2-build", "--threads", str(proc), str(fasta_path), str(bowtie_path)]
+    )
 
 
 @step
