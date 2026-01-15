@@ -26,6 +26,8 @@ def extract_default_sequences(joined: dict[str, dict]) -> list[dict]:
         if isolate["default"]:
             return isolate["sequences"]
 
+    return []
+
 
 def extract_sequences(otu: dict[str, dict]) -> Generator[str, None, None]:
     """Extract sequences from an OTU document
