@@ -35,4 +35,4 @@ asyncio_mode = "auto"
 select = ["ALL"]
 
 [tool.uv.sources]
-virtool = { git = "https://github.com/virtool/virtool", tag = "31.11.3" }
+virtool = { git = "https://github.com/virtool/virtool", tag = "36.15.1" }
