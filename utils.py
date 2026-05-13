@@ -1,6 +1,6 @@
 import gzip
 import json
-from collections.abc import Generator
+from collections.abc import Iterator
 from pathlib import Path
 
 from virtool.references.models import ReferenceNested
@@ -29,7 +29,7 @@ def extract_default_sequences(joined: dict[str, dict]) -> list[dict]:
     return []
 
 
-def extract_sequences(otu: dict[str, dict]) -> Generator[str, None, None]:
+def extract_sequences(otu: dict[str, dict]) -> Iterator[dict]:
     """Extract sequences from an OTU document
 
     :param otu: The OTU document
@@ -44,7 +44,7 @@ def get_sequences_from_patched_otus(
     otus: list[dict],
     data_type: str,
     sequence_otu_map: dict,
-) -> Generator[dict, None, None]:
+) -> Iterator[dict]:
     """Return sequence documents based on an `Iterable` of joined OTU documents. Writes
     a map of sequence IDs to OTU IDs into the passed `sequence_otu_map`.
 
