@@ -25,7 +25,7 @@ dev = [
     "pytest-mock>=3.15.1",
     "ruff>=0.15.13",
     "syrupy>=5.2.0",
-    "ty>=0.0.12",
+    "ty>=0.0.37",
 ]
 
 [tool.pytest.ini_options]
